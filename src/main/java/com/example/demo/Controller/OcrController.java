@@ -2,6 +2,7 @@ package com.example.demo.Controller;
 
 import com.example.demo.service.OcrService;
 import com.example.demo.utils.AnalysisUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,18 @@ public class OcrController {
     public String barCode (MultipartFile file) {
         checkParam(file);
         return ocrService.barCode(file);
+    }
+
+    @PostMapping("/qrCode")
+    @CrossOrigin
+    public String qrCode (MultipartFile file) {
+        checkParam(file);
+        String barCodeData = businessLicense(file);
+        if (Strings.isNotEmpty(barCodeData) && barCodeData.contains("二维码")) {
+            AnalysisUtils analysisUtils = new AnalysisUtils();
+            return analysisUtils.qrBarAnalysis(barCodeData);
+        }
+        return "识别失败";
     }
 
     @PostMapping("/businessLicense")

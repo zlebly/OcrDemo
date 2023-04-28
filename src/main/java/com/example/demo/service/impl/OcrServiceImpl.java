@@ -8,11 +8,11 @@ import com.example.demo.utils.HttpUtils;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import org.apache.commons.io.FileUtils;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,7 +41,7 @@ public class OcrServiceImpl implements OcrService {
     public String barCode(MultipartFile file) {
         String result = "";
         try {
-            JSONObject json = new JSONObject();
+            JSONObject json = new JSONObject(true);
             json.put("username", "test");
             json.put("imgbase64", new BASE64Encoder().encode(file.getBytes()));
             json.put("typeid","2006");
@@ -108,7 +108,7 @@ public class OcrServiceImpl implements OcrService {
     @Override
     public String commonOcr(MultipartFile file) {
         String typeid = "8999";
-        JSONObject json = new JSONObject();
+        JSONObject json = new JSONObject(true);
         String username = "test";
         String result;
         try {
