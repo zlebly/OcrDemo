@@ -83,8 +83,11 @@ public class OcrServiceImpl implements OcrService {
         try {
             String[] filename = file.getOriginalFilename().split("\\.");
             String id =  UUID.randomUUID().toString();
-            String filePath = tmpFilePath + System.getProperty("path.separator") + id + "." + filename[1];
+            String filePath = tmpFilePath + id + "." + filename[1];
             File tmpFile = new File(filePath);
+            if (!tmpFile.getParentFile().exists()) {
+                tmpFile.getParentFile().mkdir();
+            }
             FileUtils.copyInputStreamToFile(file.getInputStream(), tmpFile);
             RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
                     .addFormDataPart("username", "test")
@@ -97,7 +100,7 @@ public class OcrServiceImpl implements OcrService {
 
             result = AnalysisUtils.financialJsonAnalysis(jsonStr);
             logger.debug("财务报表解析如下:[{}]", result);
-            tmpFile.deleteOnExit();
+            tmpFile.delete();
 
         } catch (JSONException | IOException e) {
             throw new RuntimeException("识别财务报表失败:[{}]", e);
