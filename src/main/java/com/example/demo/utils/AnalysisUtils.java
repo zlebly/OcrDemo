@@ -17,6 +17,8 @@ public class AnalysisUtils {
 
     private static final String TABLE_WIDE = "                    ";
 
+    private static final List<String> ID_CARD = Arrays.asList("姓名", "性别", "民族", "出生", "住址");
+
     /**
      * 解析PDF-JSON数据
      * @param jsonStr jsonStr
@@ -39,27 +41,34 @@ public class AnalysisUtils {
         JSONObject jsonObject = new JSONObject();
         String key = "";
         String value = "";
+        List<String> idCardKey = new ArrayList<>();
         for (int i = 0; i < rowItemJson.length() - 1; i++) {
-            String rowItem = rowItemJson
-                    .getJSONObject(i)
-                    .getJSONObject("rowContext")
-                    .getJSONArray("charitem")
-                    .getJSONObject(0)
-                    .getString("charValue");
+            String rowItem = getRowItem (rowItemJson, i);
             if (rowItem.contains("性别") && rowItem.length() > 2) {
                 jsonObject.put("性别", rowItem.substring(2, rowItem.length()));
+                idCardKey.add("性别");
                 continue;
             }
             if (rowItem.contains("民族") && rowItem.length() > 2) {
                 jsonObject.put("民族", rowItem.substring(2, rowItem.length()));
+                idCardKey.add("民族");
                 continue;
             }
             if (Strings.isEmpty(key)) {
                 key = rowItem;
+                idCardKey.add(key);
                 continue;
             }
             if (!Strings.isEmpty(key) && Strings.isEmpty(value)) {
                 value = rowItem;
+                if (idCardKey.equals(ID_CARD) && i < rowItemJson.length() - 1) {
+                    rowItem = getRowItem (rowItemJson, ++i);
+                    while (!"公民身份号码".equals(rowItem)) {
+                        value += rowItem;
+                        rowItem = getRowItem (rowItemJson, ++i);
+                    }
+                    --i;
+                }
                 jsonObject.put(key, value);
                 key = "";
                 value = "";
@@ -209,7 +218,6 @@ public class AnalysisUtils {
                     }
                 }
             }
-            // 流水号 : 3212345678912345678
             for (String candidate : candidates) {
                 for (int i = 2; i < candidate.length(); i++) {
                     char ch = candidate.charAt(i);
@@ -230,5 +238,14 @@ public class AnalysisUtils {
             throw new RuntimeException();
         }
         return serialNumber;
+    }
+
+    private static String getRowItem (JSONArray rowItemJson, int i) throws JSONException{
+        return  rowItemJson
+                .getJSONObject(i)
+                .getJSONObject("rowContext")
+                .getJSONArray("charitem")
+                .getJSONObject(0)
+                .getString("charValue");
     }
 }

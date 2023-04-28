@@ -135,20 +135,25 @@ public class HttpUtils {
      * @param body    params
      * @return String
      */
-    public static <T> String doPost(String url, RequestBody body) throws IOException {
+    public static String doPost(String url, RequestBody body) throws IOException {
         OkHttpClient client = new OkHttpClient().newBuilder()
                 .build();
-        Response response;
+        Response response = null;
+        String result;
         try {
             Request request = new Request.Builder()
                     .url(url)
                     .method("POST", body)
                     .build();
             response = client.newCall(request).execute();
+            result = response.body().string();
         } catch (IOException e) {
             throw new IOException();
+        } finally {
+            if (response != null) {
+                response.close();
+            }
         }
-
-        return response.body().string();
+        return result;
     }
 }
