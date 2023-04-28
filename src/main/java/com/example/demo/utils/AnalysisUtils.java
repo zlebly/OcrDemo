@@ -5,9 +5,7 @@ import org.springframework.boot.configurationprocessor.json.JSONArray;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author douwenjie
@@ -38,18 +36,36 @@ public class AnalysisUtils {
                 dataJson.getJSONObject("cardsinfo")
                         .getJSONObject("card")
                         .getJSONArray("rowitem");
-        StringBuffer stringBuffer = new StringBuffer();
+        JSONObject jsonObject = new JSONObject();
+        String key = "";
+        String value = "";
         for (int i = 0; i < rowItemJson.length() - 1; i++) {
-            String value = rowItemJson
+            String rowItem = rowItemJson
                     .getJSONObject(i)
                     .getJSONObject("rowContext")
                     .getJSONArray("charitem")
                     .getJSONObject(0)
                     .getString("charValue");
-
-            stringBuffer.append(value).append(System.getProperty("line.separator"));
+            if (rowItem.contains("性别") && rowItem.length() > 2) {
+                jsonObject.put("性别", rowItem.substring(2, rowItem.length()));
+                continue;
+            }
+            if (rowItem.contains("民族") && rowItem.length() > 2) {
+                jsonObject.put("民族", rowItem.substring(2, rowItem.length()));
+                continue;
+            }
+            if (Strings.isEmpty(key)) {
+                key = rowItem;
+                continue;
+            }
+            if (!Strings.isEmpty(key) && Strings.isEmpty(value)) {
+                value = rowItem;
+                jsonObject.put(key, value);
+                key = "";
+                value = "";
+            }
         }
-        return stringBuffer.toString();
+        return jsonObject.toString();
     }
 
     /**
@@ -61,13 +77,11 @@ public class AnalysisUtils {
     public static String licenseJsonAnalysis(String jsonStr) throws JSONException {
         checkReturnCode(jsonStr);
         JSONObject infoJson = new JSONObject(jsonStr).getJSONObject("info");
-        StringBuffer stringBuffer = new StringBuffer();
+        JSONObject jsonObject = new JSONObject();
         for (String str : BUSINESS_LICENSE) {
-            stringBuffer.append(str).append(" : ")
-                    .append(infoJson.getString(str))
-                    .append(System.getProperty("line.separator"));
+            jsonObject.put(str, infoJson.getString(str));
         }
-        return stringBuffer.toString();
+        return jsonObject.toString();
     }
 
     /**
@@ -152,7 +166,7 @@ public class AnalysisUtils {
         JSONObject dataJson = new JSONObject(jsonStr).getJSONObject("data");
         checkReturnCode(dataJson.toString());
         JSONObject itemJson = dataJson.getJSONObject("info").getJSONArray("item").getJSONObject(0);
-        return itemJson.getString("barcode");
+        return new JSONObject().put("识别结果", itemJson.getString("barcode")).toString();
     }
 
 
@@ -171,5 +185,50 @@ public class AnalysisUtils {
             return TABLE_WIDE;
         }
         return TABLE_WIDE.substring(str.length());
+    }
+
+    public String serialNumberAnalysis(String ocrStr) {
+        String serialNumber = "";
+        try {
+            JSONObject jsonObject = new JSONObject(ocrStr);
+            Iterator<String> sIterator = jsonObject.keys();
+            List<String> candidates = new ArrayList<>();
+            while(sIterator.hasNext()){
+                String key = sIterator.next();
+                String value = jsonObject.getString(key);
+                if (key.length() >= 19 && key.contains("32")) {
+                    String candidate = key.substring(key.indexOf("32"));
+                    if (candidate.length() >= 19) {
+                        candidates.add(candidate);
+                    }
+                }
+                if (value.length() >= 19 && value.contains("32")) {
+                    String candidate = value.substring(value.indexOf("32"));
+                    if (candidate.length() >= 19) {
+                        candidates.add(candidate);
+                    }
+                }
+            }
+            // 流水号 : 3212345678912345678
+            for (String candidate : candidates) {
+                for (int i = 2; i < candidate.length(); i++) {
+                    char ch = candidate.charAt(i);
+                    if (i < 19 && !Character.isLetterOrDigit(ch)) {
+                        break;
+                    }
+                    if (i == 18 && candidate.length() == 19) {
+                        serialNumber = candidate;
+                        break;
+                    }
+                    if (i == 19 && !Character.isLetterOrDigit(ch)) {
+                        serialNumber = candidate.substring(0, 19);
+                        break;
+                    }
+                }
+            }
+        } catch (JSONException e) {
+            throw new RuntimeException();
+        }
+        return serialNumber;
     }
 }

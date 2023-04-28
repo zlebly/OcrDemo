@@ -93,10 +93,12 @@ public class OcrServiceImpl implements OcrService {
                                     tmpFile))
                     .addFormDataPart("typeid", "2005")
                     .build();
-            result = AnalysisUtils.financialJsonAnalysis(
-                    HttpUtils.doPost(ocrUrl + HttpConstants.DO_FIN_RECON, body));
+            String jsonStr = HttpUtils.doPost(ocrUrl + HttpConstants.DO_FIN_RECON, body);
+
+            result = AnalysisUtils.financialJsonAnalysis(jsonStr);
             logger.debug("财务报表解析如下:[{}]", result);
             tmpFile.deleteOnExit();
+
         } catch (JSONException | IOException e) {
             throw new RuntimeException("识别财务报表失败:[{}]", e);
         }
